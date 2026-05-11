@@ -335,20 +335,63 @@ class _TaskListScreenState extends State<TaskListScreen> {
       ),
     );
   }
-
-  Widget _buildTaskList() {
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 80),
-      itemCount: _tasks.length,
-      itemBuilder: (context, index) {
-        final task = _tasks[index];
-        return TaskCard(
+ 
+ Widget _buildTaskList() {
+  return ListView.builder(
+    padding: const EdgeInsets.only(top: 8, bottom: 80),
+    itemCount: _tasks.length,
+    itemBuilder: (context, index) {
+      final task = _tasks[index];
+      return Dismissible(
+        key: Key(task.title + index.toString()),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          child: const Icon(Icons.delete, color: Colors.white, size: 28),
+        ),
+        onDismissed: (direction) {
+          setState(() {
+            _tasks.removeAt(index);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${task.title} deleted'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        },
+        child: TaskCard(
           task: task,
-          onTap: () {
-            
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TaskDetailScreen(
+                  task: task,
+                  taskIndex: index,
+                  onUpdate: (updatedTask) {
+                    setState(() {
+                      _tasks[index] = updatedTask;
+                    });
+                  },
+                  onDelete: () {
+                    setState(() {
+                      _tasks.removeAt(index);
+                    });
+                  },
+                ),
+              ),
+            );
           },
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 }
