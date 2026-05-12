@@ -53,9 +53,9 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'I am a final year Software Engineering student'
-              'I am building My First Flutter project.'
-              'My Task is to Crate a Simple Task Manager App',
+              'I am a final year Software Engineering student. '
+              'I am building My First Flutter project. '
+              'My Task is to Create a Simple Task Manager App',
               style: TextStyle(fontSize: 14, height: 1.6),
             ),
             const SizedBox(height: 24),

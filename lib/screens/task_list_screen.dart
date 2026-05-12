@@ -40,7 +40,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
       isCompleted: false,
     ),
   ];
-
+   
+   List<Task> get _filteredTasks {
+  switch (_selectedFilter) {
+    case 'Pending':
+      return _tasks.where((task) => !task.isCompleted).toList();
+    case 'Completed':
+      return _tasks.where((task) => task.isCompleted).toList();
+    default:
+      return _tasks;
+  }
+}
   // Form controllers
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -336,15 +346,40 @@ class _TaskListScreenState extends State<TaskListScreen> {
       ),
     );
   }
+
+  Widget _buildFilterBar() {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+    child: Row(
+      children: ['All', 'Pending', 'Completed'].map((filter) {
+        final bool isSelected = _selectedFilter == filter;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ChoiceChip(
+            label: Text(filter),
+            selected: isSelected,
+            onSelected: (_) {
+              setState(() {
+                _selectedFilter = filter;
+              });
+            },
+          ),
+        );
+      }).toList(),
+    ),
+  );
+  }
  
  Widget _buildTaskList() {
+  final tasks = _filteredTasks;       // ← use filtered list
   return ListView.builder(
     padding: const EdgeInsets.only(top: 8, bottom: 80),
-    itemCount: _tasks.length,
+    itemCount: tasks.length,           // ← tasks not _tasks
     itemBuilder: (context, index) {
-      final task = _tasks[index];
+      final task = tasks[index];       // ← tasks not _tasks
+      final actualIndex = _tasks.indexOf(task);  // ← real index for actions
       return Dismissible(
-        key: Key(task.title + index.toString()),
+        key: Key(task.title + actualIndex.toString()),
         direction: DismissDirection.endToStart,
         background: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -358,7 +393,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
         ),
         onDismissed: (direction) {
           setState(() {
-            _tasks.removeAt(index);
+            _tasks.removeAt(actualIndex);   // ← remove from real list
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -375,52 +410,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
               MaterialPageRoute(
                 builder: (context) => TaskDetailScreen(
                   task: task,
-                  taskIndex: index,
+                  taskIndex: actualIndex,
                   onUpdate: (updatedTask) {
                     setState(() {
-                      _tasks[index] = updatedTask;
+                      _tasks[actualIndex] = updatedTask;
                     });
                   },
                   onDelete: () {
                     setState(() {
-                      _tasks.removeAt(index);
+                      _tasks.removeAt(actualIndex);
                     });
+                  },
+                  onEdit: () {
+                    Navigator.pop(context);
+                    _showAddTaskSheet(
+                      existingTask: task,
+                      taskIndex: actualIndex,
+                    );
                   },
                 ),
               ),
             );
           },
         ),
-        onTap: () async {
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => TaskDetailScreen(
-        task: task,
-        taskIndex: index,
-        onUpdate: (updatedTask) {
-          setState(() {
-            _tasks[index] = updatedTask;
-          });
-        },
-        onDelete: () {
-          setState(() {
-            _tasks.removeAt(index);
-          });
-        },
-        onEdit: () {
-          Navigator.pop(context); // close detail screen
-          _showAddTaskSheet(
-            existingTask: task,
-            taskIndex: index,
-          );
-        },
-      ),
-    ),
-  );
-},
       );
     },
   );
 }
-}
+
+  }
