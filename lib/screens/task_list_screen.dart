@@ -13,6 +13,7 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
+  String _selectedFilter = 'All';
   final List<Task> _tasks = [
     Task(
       title: 'Submit Flutter assignment',
@@ -390,6 +391,34 @@ class _TaskListScreenState extends State<TaskListScreen> {
             );
           },
         ),
+        onTap: () async {
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => TaskDetailScreen(
+        task: task,
+        taskIndex: index,
+        onUpdate: (updatedTask) {
+          setState(() {
+            _tasks[index] = updatedTask;
+          });
+        },
+        onDelete: () {
+          setState(() {
+            _tasks.removeAt(index);
+          });
+        },
+        onEdit: () {
+          Navigator.pop(context); // close detail screen
+          _showAddTaskSheet(
+            existingTask: task,
+            taskIndex: index,
+          );
+        },
+      ),
+    ),
+  );
+},
       );
     },
   );

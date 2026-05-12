@@ -6,6 +6,7 @@ class TaskDetailScreen extends StatefulWidget {
   final int taskIndex;
   final Function(Task updatedTask) onUpdate;
   final VoidCallback onDelete;
+  final VoidCallback onEdit; 
 
   const TaskDetailScreen({
     super.key,
@@ -13,6 +14,7 @@ class TaskDetailScreen extends StatefulWidget {
     required this.taskIndex,
     required this.onUpdate,
     required this.onDelete,
+    required this.onEdit,  
   });
 
   @override
@@ -242,6 +244,26 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 onPressed: _confirmDelete,
               ),
             ),
+            const SizedBox(height: 12),
+
+            // Edit button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text(
+                  'Edit Task',
+                  style: TextStyle(fontSize: 15),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            onPressed: widget.onEdit,
+          ),
+        ),
           ],
         ),
       ),
