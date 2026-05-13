@@ -14,6 +14,7 @@ class TaskListScreen extends StatefulWidget {
 
 class _TaskListScreenState extends State<TaskListScreen> {
   String _selectedFilter = 'All';
+  String _selectedSort = 'None';
   final List<Task> _tasks = [
     Task(
       title: 'Submit Flutter assignment',
@@ -51,6 +52,45 @@ class _TaskListScreenState extends State<TaskListScreen> {
       return _tasks;
   }
 }
+
+     List<Task> get _sortedAndFilteredTasks {
+        final filtered = _filteredTasks;
+        final sorted = List<Task>.from(filtered);
+
+        if (_selectedSort == 'Due Date') {
+          sorted.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+        } else if (_selectedSort == 'Priority') {
+          const order = {'High': 0, 'Medium': 1, 'Low': 2};
+          sorted.sort((a, b) => order[a.priority]!.compareTo(order[b.priority]!));
+         }
+
+        return sorted;
+      }
+
+      void _showSortDialog() {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Sort Tasks'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: ['None', 'Due Date', 'Priority'].map((option) {
+                return RadioListTile<String>(
+                  title: Text(option),
+                  value: option,
+                  groupValue: _selectedSort,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedSort = value!;
+                    });
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      }
   // Form controllers
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
@@ -304,17 +344,39 @@ class _TaskListScreenState extends State<TaskListScreen> {
         title: const Text('My Tasks'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.sort),
+            onPressed: _showSortDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.account_circle),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
-              );
-            },
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
+      },
+    ),
+  ],
+),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildStatsBar(),  
+          _buildFilterBar(),
+          Expanded(
+            child: _filteredTasks.isEmpty && _tasks.isEmpty   
+                ? _buildEmptyState()
+                : _filteredTasks.isEmpty
+                ? Center(
+                    child: Text(
+                      'No $_selectedFilter tasks',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 15),
+                    ),
+                  )
+                : _buildTaskList(),
           ),
         ],
       ),
-      body: _tasks.isEmpty ? _buildEmptyState() : _buildTaskList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddTaskSheet(),
         child: const Icon(Icons.add),
@@ -369,15 +431,93 @@ class _TaskListScreenState extends State<TaskListScreen> {
     ),
   );
   }
+
+  Widget _buildStatsBar() {
+  final total = _tasks.length;
+  final completed = _tasks.where((t) => t.isCompleted).length;
+  final pending = total - completed;
+  final progress = total == 0 ? 0.0 : completed / total;
+
+  return Container(
+    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.green[50],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.green.shade100),
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            _buildStatItem('Total', total, Colors.blueGrey),
+            _buildDivider(),
+            _buildStatItem('Completed', completed, Colors.green),
+            _buildDivider(),
+            _buildStatItem('Pending', pending, Colors.orange),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            backgroundColor: Colors.green[100],
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            '${(progress * 100).toStringAsFixed(0)}% complete',
+            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildStatItem(String label, int count, Color color) {
+  return Expanded(
+    child: Column(
+      children: [
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildDivider() {
+  return Container(
+    height: 36,
+    width: 1,
+    color: Colors.green[200],
+  );
+}
  
- Widget _buildTaskList() {
-  final tasks = _filteredTasks;       // ← use filtered list
+  Widget _buildTaskList() {
+  final tasks = _sortedAndFilteredTasks;       
   return ListView.builder(
     padding: const EdgeInsets.only(top: 8, bottom: 80),
-    itemCount: tasks.length,           // ← tasks not _tasks
+    itemCount: tasks.length,           
     itemBuilder: (context, index) {
-      final task = tasks[index];       // ← tasks not _tasks
-      final actualIndex = _tasks.indexOf(task);  // ← real index for actions
+      final task = tasks[index];      
+      final actualIndex = _tasks.indexOf(task);  
       return Dismissible(
         key: Key(task.title + actualIndex.toString()),
         direction: DismissDirection.endToStart,
@@ -436,6 +576,6 @@ class _TaskListScreenState extends State<TaskListScreen> {
       );
     },
   );
-}
-
   }
+
+}
